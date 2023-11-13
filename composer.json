@@ -15,10 +15,10 @@
     },
     "autoload": {
         "psr-4": {
-            "DarwinS/CommonPHPCurd": "src/"
+            "DarwinS\\CommonPHPCurd\\": "src/"
         }
     },
-     "repositories": [
+    "repositories": [
         {
             "type": "vcs",
             "url": "https://github.com/DarwinSSV/CommonPHPCurd",
