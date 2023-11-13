@@ -1,0 +1,21 @@
+{
+    "name": "DarwinS/CommonPHPCurd",
+    "description": "Common PHP CURD",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Darwin S",
+            "email": "darpart19@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.2",
+        "another-vendor/package": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "DarwinS/CommonPHPCurd": "src/"
+        }
+    }
+}
