@@ -1,6 +1,8 @@
 <?php
 namespace DarwinS\CommonPHPCurd;
 
+require_once 'DbConnect.php';
+
 class CommonPHPCurd {
     public static function commonCurd($conn, $action, $table, $data = array(), $condition = "") {
         try {
