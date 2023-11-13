@@ -17,5 +17,14 @@
         "psr-4": {
             "DarwinS/CommonPHPCurd": "src/"
         }
-    }
+    },
+     "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/DarwinSSV/CommonPHPCurd",
+            "options": {
+                "branch": "main"
+            }
+        }
+    ]
 }
