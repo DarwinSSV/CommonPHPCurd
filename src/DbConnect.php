@@ -12,8 +12,8 @@ class DbConnect {
     }
 
     private function loadEnv() {
-        $envPath = __DIR__ . '/.env';
-
+        $envPath = getcwd() . '/.env';
+         
         if (!file_exists($envPath)) {
             throw new Exception('.env file not found.');
         }
