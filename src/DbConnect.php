@@ -1,19 +1,21 @@
 <?php
 
+namespace DbConnection;
+
+use Exception;
+use mysqli;
+
 class DbConnect {
+
     private $host;
     private $username;
     private $password;
     private $database;
 
-    public function __construct() {
-        $this->loadEnv();
-        $this->connect();
-    }
+    public function loadEnv() {
 
-    private function loadEnv() {
-        $envPath = getcwd() . '/.env';
-         
+        $envPath = __DIR__ . '/.env';
+
         if (!file_exists($envPath)) {
             throw new Exception('.env file not found.');
         }
@@ -30,11 +32,17 @@ class DbConnect {
         $this->database = $env['DB_DATABASE'];
     }
 
-    private function connect() {
+    public function connect() {
+
+        $this->loadEnv();
+
         $conn = new mysqli($this->host, $this->username, $this->password, $this->database);
 
         if ($conn->connect_error) {
             die('Connection failed: ' . $conn->connect_error);
+        } else {
+
+            echo 'Connection Established';
         }
 
         return $conn;

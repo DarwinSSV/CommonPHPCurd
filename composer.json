@@ -1,5 +1,5 @@
 {
-    "name": "darwins/commonphpcurd",
+    "name": "darwin-s/commonphpcurd",
     "description": "Common PHP CURD",
     "type": "library",
     "license": "MIT",
@@ -16,15 +16,5 @@
         "psr-4": {
             "DarwinS\\CommonPHPCurd\\": "src/"
         }
-    },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/DarwinSSV/CommonPHPCurd",
-            "options": {
-                "branch": "main"
-            }
-        }
-    ],
-    "version": "1.0.0"
+    }
 }

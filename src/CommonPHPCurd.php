@@ -1,143 +1,130 @@
 <?php
+
 namespace DarwinS\CommonPHPCurd;
+use PDO;
+use SupportFunctions;
+
+require 'DbConnect.php';
+
+use DbConnection\DbConnect;
 
 class CommonPHPCurd {
-    public static function commonCurd($conn, $action, $table, $data = array(), $condition = "") {
-        try {
-            switch ($action) {
-                case 'insert':
-                    return self::insert_data($conn, $table, $data);
-                case 'update':
-                    return self::update_data($conn, $table, $data, $condition);
-                case 'delete':
-                    return self::delete_data($conn, $table, $condition);
-                case 'select':
-                    // Implement a select function if needed
-                    break;
-                case 'select':
-                    return self::select_data($conn, $table, $data, $condition);
-                default:
-                    return 0; // Invalid action specified
-            }
-        } catch (Exception $e) {
-            // Handle exceptions here (e.g., log the error, display a user-friendly message)
-            return 0;
-        }
+
+    private $conn;
+
+    public function __construct() {
+
+        $db_conn = new DbConnect;
+
+        $this->conn = $db_conn->connect();
     }
 
-    private static function insert_data($conn, $table, $data) {
-        try {
-            $columns = implode(", ", array_keys($data));
-            $placeholders = implode(", ", array_fill(0, count($data), '?'));
+    public static function common_response( $status, $message, $data ) {
 
-            // Using prepared statements to prevent SQL injection
-            $stmt = $conn->prepare("INSERT INTO $table ($columns) VALUES ($placeholders)");
+        $response['status'] = $status;
+        $response['message'] = $message;
+        $response['data'] = $data;
 
-            if (!$stmt) {
-                throw new Exception("Failed to prepare statement: " . $conn->error);
-            }
-
-            // Bind parameters
-            $types = str_repeat('s', count($data)); // Assuming all data is strings
-            $stmt->bind_param($types, ...array_values($data));
-
-            if ($stmt->execute()) {
-                // Return the last inserted row id
-                return $stmt->insert_id;
-            } else {
-                throw new Exception("Error during insertion: " . $stmt->error);
-            }
-        } catch (Exception $e) {
-            throw $e;
-        } finally {
-            // Close the statement
-            if (isset($stmt)) {
-                $stmt->close();
-            }
-        }
+        return $response;
     }
 
-    private static function update_data($conn, $table, $data, $condition) {
+    public static function add_update( $id, $tablename, $insert_data, $update_data ) {
+
         try {
-            $set_clause = implode(", ", array_map(function ($key) {
-                return "$key = ?";
-            }, array_keys($data)));
 
-            // Using prepared statements to prevent SQL injection
-            $stmt = $conn->prepare("UPDATE $table SET $set_clause WHERE $condition");
+            if( !empty( $id ) ) {
 
-            if (!$stmt) {
-                throw new Exception("Failed to prepare statement: " . $conn->error);
-            }
+                // Checking data with ID present
+                $row = SupportFunctions::data_exists( $tablename, $column, $value );
+                
+                if( !empty( $row ) ) {
 
-            // Bind parameters
-            $types = str_repeat('s', count($data)); // Assuming all data is strings
-            $stmt->bind_param($types, ...array_values($data));
+                    $setClause = SupportFunctions::setupdateclause( $update_data );                    
 
-            if ($stmt->execute()) {
-                return 1; // Update successful
+                    $sql = "Update `" . $tablename . "` SET " . $setClause . "WHERE id = :id";
+                    $query = $this->conn->prepare( $sql );
+
+                    foreach ( $data as $column => $value ) {
+                        
+                        $query->bindParam( ":$column", $value );
+                    }                    
+
+                    $query->bindParam( ":id", $id, PDO::PARAM_INT );
+
+                    $updated = $query->execute();
+
+                    if( $updated ) {
+
+                        self::common_response( 0, 'Data Updated Successfully', [] );
+                    } else {
+
+                        self::common_response( 0, 'Error Updating Data', [] );
+                    }
+                } else {
+
+                    self::common_response( 0, 'Invalid Data ID', [] );
+                }
             } else {
-                throw new Exception("Error during update: " . $stmt->error);
+
+                $columns = implode( ', ', array_keys( $data ) );
+                $values = implode( ', ', array_fill( 0, count( $data ), '?' ) );
+
+                $sql = "INSERT INTO `" . $tablename . "`" . $columns . " VALUES (" . $values . ")";
+                $query = $this->conn->prepare( $sql );
+
+                foreach ( $insert_data as $column => &$value ) {
+
+                    $query->bindParam( ":$column", $value );
+                }
+
+                $inserted = $query->execute();
+
+                if( $inserted ) {
+
+                    self::common_response( 0, 'Data Added Successfully', [] );
+                } else {
+
+                    self::common_response( 0, 'Error Adding Data', [] );
+                }
             }
-        } catch (Exception $e) {
-            throw $e;
-        } finally {
-            // Close the statement
-            if (isset($stmt)) {
-                $stmt->close();
-            }
+        } catch( Exception $e ) {
+
+            $response = self::common_response( 0, 'Exception: ' . $e->getMessage(), [] );
         }
+
+        return $response;
     }
 
-    private static function delete_data($conn, $table, $condition) {
+    public static function strict_delete( $tablename, $column, $value ) {
+
         try {
-            // Using prepared statements to prevent SQL injection
-            $stmt = $conn->prepare("DELETE FROM $table WHERE $condition");
 
-            if (!$stmt) {
-                throw new Exception("Failed to prepare statement: " . $conn->error);
-            }
+            $row = SupportFunctions::data_exists( $tablename, $column, $value );
 
-            if ($stmt->execute()) {
-                return 1; // Delete successful
+            if( !empty( $row ) ) {
+
+                $sql = "DELETE FROM `" . $tablename ."` WHERE $column = :value";
+                $query = $this->conn->prepare( $sql );
+                $query->bindParam( ":value", $value );
+
+                $deleted = $query->execute();
+
+                if( $deleted ) {
+
+                    self::common_response( 1, 'Deleted Successfully', [] );
+                } else {
+
+                    self::common_response( 0, 'Error Deleting Record', [] );
+                }
             } else {
-                throw new Exception("Error during delete: " . $stmt->error);
+
+                self::common_response( 0, 'No Record Found', [] );
             }
-        } catch (Exception $e) {
-            throw $e;
-        } finally {
-            // Close the statement
-            if (isset($stmt)) {
-                $stmt->close();
-            }
+        } catch( Exception $e ) {
+
+            $response = self::common_response( 0, 'Exception: ' . $e->getMessage(), [] );
         }
-    }
 
-    private static function select_data($conn, $table, $columns, $condition) {
-        try {
-            $selectedColumns = implode(", ", $columns);
-            // Using prepared statements to prevent SQL injection
-            $stmt = $conn->prepare("SELECT $selectedColumns FROM $table WHERE $condition");
-
-            if (!$stmt) {
-                throw new Exception("Failed to prepare statement: " . $conn->error);
-            }
-
-            if ($stmt->execute()) {
-                // Fetch the result
-                $result = $stmt->get_result();
-                $row = $result->fetch_assoc();
-                return $row;
-            } else {
-                throw new Exception("Error during select: " . $stmt->error);
-            }
-        } catch (Exception $e) {
-            throw $e;
-        } finally {
-            // Close the statement
-            if (isset($stmt)) {
-                $stmt->close();
-            }
-        }
+        return $response;
     }
 }
